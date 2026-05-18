@@ -1,28 +1,45 @@
 import streamlit as st
-import pandas as pd
+# To make things easier later, we're also importing numpy and pandas for
+# working with sample data.
 import numpy as np
+import pandas as pd
+import altair as alt
 
-st.title('Uber pickups in NYC')
-
-DATE_COLUMN = 'date/time'
-
-DATA_URL = ('https://s3-us-west-2.amazonaws.com/'
-            'streamlit-demo-data/uber-raw-data-sep14.csv.gz')
-
-def load_data(nrows):
-    data = pd.read_csv(DATA_URL, nrows=nrows)
-    lowercase = lambda x: str(x).lower()
-    data.rename(lowercase, axis='columns', inplace=True)
-    data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN])
+@st.cache
+def read_data():
+    data = pd.read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv")
+    data['date'] = pd.to_datetime(data['date'])
     return data
+    
+data = read_data()
+column = st.selectbox('Select column',['total_cases','total_cases_per_million','total_deaths','total_deaths_per_million'])
+countries = st.multiselect('Select countries',list(data["location"].unique()))
 
-data_load_state=st.text("Loading Data...")
-data=load_data(10000)
-data_load_state.text("Loading data...Done!")
+if countries:
+    country_max_cases = []
+    country_cases = pd.DataFrame()
+    for country in countries:
+        country_cases = country_cases.append(data[data["location"] == country],ignore_index=True)
+        country_max_cases.append(np.max(data[data["location"] == country][column]))
 
-st.subheader("Raw Data")
-st.write(data)
+    df_max = pd.DataFrame({
+    'country': countries,
+    column: country_max_cases
+    })
 
-st.subheader('Number of Pickups per hour')
-hist_values=np.histogram(data[DATE_COLUMN].dt.hour, bins=24, range=(0,24))[0]
-st.bar_chart(hist_values)
+    df_max = df_max.set_index('country',drop=True)
+
+    col1, col2 = st.beta_columns(2)
+
+    with col1:
+        st.bar_chart(df_max)
+
+    chart = alt.Chart(country_cases).mark_line().encode(
+        x=alt.X('date:T', axis=alt.Axis(tickCount=10, grid=False)),
+        y=alt.Y(f'{column}:Q'),
+        color='location:N',
+        #strokeDash='location',
+    )
+
+    with col2:
+        st.altair_chart(chart, use_container_width=True)
