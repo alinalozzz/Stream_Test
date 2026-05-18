@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import altair as alt
 
-@st.cache
+#@st.cache
 def read_data():
     data = pd.read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv")
     data['date'] = pd.to_datetime(data['date'])
