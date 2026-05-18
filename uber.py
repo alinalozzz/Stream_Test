@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Feb 22 23:43:18 2021
+
+@author: fiedl
+"""
+
 import streamlit as st
 # To make things easier later, we're also importing numpy and pandas for
 # working with sample data.
@@ -5,7 +12,7 @@ import numpy as np
 import pandas as pd
 import altair as alt
 
-#@st.cache
+@st.cache
 def read_data():
     data = pd.read_csv("https://covid.ourworldindata.org/data/owid-covid-data.csv")
     data['date'] = pd.to_datetime(data['date'])
